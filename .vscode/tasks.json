@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Full Stack (Backend + Frontend)",
+			"type": "shell",
+			"command": "$backend = Start-Job -ScriptBlock { Set-Location \"c:\\Users\\garud\\OneDrive\\Desktop\\AI Medical Chatbot web application\\backend\"; $env:FLASK_DEBUG='false'; python app.py }; Set-Location \"c:\\Users\\garud\\OneDrive\\Desktop\\AI Medical Chatbot web application\\frontend\"; npm run dev",
+			"isBackground": true
+		}
+	]
+}

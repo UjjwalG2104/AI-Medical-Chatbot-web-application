@@ -1,0 +1,68 @@
+{
+  "collections": {
+    "users": {
+        "description": "Stores user credentials for authentication",
+        "schema": {
+            "_id": "ObjectId",
+            "email": "string",
+            "password_hash": "string",
+            "created_at": "datetime"
+        }
+    },
+    "symptoms": {
+      "description": "Stores all known symptoms with optional Marathi translations",
+      "schema": {
+        "_id": "ObjectId (auto)",
+        "symptom_id": "string (unique identifier, e.g. 'S001')",
+        "name": "string (English name)",
+        "name_mr": "string (Marathi name)",
+        "keywords": ["array of alternate English terms"],
+        "keywords_mr": ["array of alternate Marathi terms"]
+      }
+    },
+    "diseases": {
+      "description": "Stores diseases with descriptions and precautions",
+      "schema": {
+        "_id": "ObjectId (auto)",
+        "disease_id": "string (unique identifier, e.g. 'D001')",
+        "name": "string (English name)",
+        "name_mr": "string (Marathi name)",
+        "description": "string (brief English description)",
+        "description_mr": "string (brief Marathi description)",
+        "precautions": ["array of precaution strings (English)"],
+        "precautions_mr": ["array of precaution strings (Marathi)"]
+      }
+    },
+    "mapping": {
+      "description": "Maps symptoms to diseases (many-to-many)",
+      "schema": {
+        "_id": "ObjectId (auto)",
+        "symptom_id": "string (references symptoms.symptom_id)",
+        "disease_id": "string (references diseases.disease_id)",
+        "weight": "number (0-1, how strongly this symptom indicates the disease)"
+      }
+    },
+    "medicines": {
+      "description": "OTC medicine suggestions per disease",
+      "schema": {
+        "_id": "ObjectId (auto)",
+        "medicine_id": "string (unique identifier, e.g. 'M001')",
+        "disease_id": "string (references diseases.disease_id)",
+        "name": "string (medicine name)",
+        "dosage": "string (e.g. '500mg twice daily')",
+        "type": "string (tablet, syrup, etc.)",
+        "notes": "string (additional info)"
+      }
+    },
+    "chats": {
+      "description": "Stores chat history",
+      "schema": {
+        "_id": "ObjectId (auto)",
+        "user_input": "string",
+        "response": "object (full bot response JSON)",
+        "language": "string ('en' or 'mr')",
+        "timestamp": "datetime (UTC)"
+      }
+    }
+  }
+}
