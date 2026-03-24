@@ -8,6 +8,18 @@ export default function Auth({ setToken }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  async function parseApiResponse(response) {
+    const text = await response.text()
+    try {
+      return JSON.parse(text)
+    } catch {
+      if (text.trim().toLowerCase().startsWith('<!doctype') || text.trim().startsWith('<html')) {
+        throw new Error('API endpoint returned HTML instead of JSON. Check VITE_API_BASE_URL in Vercel and backend route availability.')
+      }
+      throw new Error(`Unexpected API response (status ${response.status}).`)
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
@@ -21,7 +33,7 @@ export default function Auth({ setToken }) {
         body: JSON.stringify({ email, password }),
       })
 
-      const data = await response.json()
+      const data = await parseApiResponse(response)
 
       if (!response.ok) {
         throw new Error(data.error || 'Authentication failed')

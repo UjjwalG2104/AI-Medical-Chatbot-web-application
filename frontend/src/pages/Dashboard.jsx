@@ -12,6 +12,18 @@ export default function Dashboard({ token, setToken }) {
 
   const [language, setLanguage] = useState('en')
 
+  async function parseApiResponse(response) {
+    const text = await response.text()
+    try {
+      return JSON.parse(text)
+    } catch {
+      if (text.trim().toLowerCase().startsWith('<!doctype') || text.trim().startsWith('<html')) {
+        throw new Error('API endpoint returned HTML instead of JSON. Check VITE_API_BASE_URL and backend routes.')
+      }
+      throw new Error(`Unexpected API response (status ${response.status}).`)
+    }
+  }
+
   const texts = {
     en: {
       title: 'MediMind AI',
@@ -49,7 +61,7 @@ export default function Dashboard({ token, setToken }) {
     fetch(`${API_BASE_URL}/history?limit=10`, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
-      .then((res) => res.json())
+      .then((res) => parseApiResponse(res))
       .then((data) => {
         if (!data.error) setHistory(data)
       })
@@ -85,7 +97,7 @@ export default function Dashboard({ token, setToken }) {
         body: JSON.stringify({ message: text, language }),
       })
 
-      const data = await response.json()
+      const data = await parseApiResponse(response)
       if (response.status === 401) {
         handleLogout()
         return
@@ -97,7 +109,7 @@ export default function Dashboard({ token, setToken }) {
       console.error('Chat error:', error)
       const errorMsg = {
         role: 'bot',
-        content: { message: 'Connection error. Please make sure the backend server is running.' },
+        content: { message: error?.message || 'Connection error. Please make sure the backend server is running.' },
         timestamp: new Date().toISOString(),
       }
       setMessages((prev) => [...prev, errorMsg])
