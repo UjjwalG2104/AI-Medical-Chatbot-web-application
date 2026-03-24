@@ -21,7 +21,9 @@ def create_app():
     app = Flask(__name__)
 
     # ─── CORS — allow the React dev server ────────────────────────
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    cors_origins = os.getenv("CORS_ORIGINS", "*").strip()
+    allowed_origins = "*" if cors_origins == "*" else [o.strip() for o in cors_origins.split(",") if o.strip()]
+    CORS(app, resources={r"/*": {"origins": allowed_origins}})
 
     # ─── MongoDB connection ───────────────────────────────────────
     mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")

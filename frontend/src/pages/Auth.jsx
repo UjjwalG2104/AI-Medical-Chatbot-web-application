@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { API_BASE_URL } from '../config'
 
 export default function Auth({ setToken }) {
   const [isLogin, setIsLogin] = useState(true)
@@ -12,9 +13,9 @@ export default function Auth({ setToken }) {
     setError('')
     setLoading(true)
 
-    const endpoint = isLogin ? 'login' : 'register'
+    const endpoint = isLogin ? 'auth/login' : 'auth/signup'
     try {
-      const response = await fetch(`http://127.0.0.1:5000/${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

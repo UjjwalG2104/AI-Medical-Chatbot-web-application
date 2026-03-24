@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import ChatInput from '../components/ChatInput'
 import ResponseCard from '../components/ResponseCard'
+import { API_BASE_URL } from '../config'
 
 export default function Dashboard({ token, setToken }) {
   const [messages, setMessages] = useState([])
@@ -45,7 +46,7 @@ export default function Dashboard({ token, setToken }) {
   const [history, setHistory] = useState([])
   useEffect(() => {
     if (!token) return
-    fetch('http://127.0.0.1:5000/history?limit=10', {
+    fetch(`${API_BASE_URL}/history?limit=10`, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -75,7 +76,7 @@ export default function Dashboard({ token, setToken }) {
     setIsLoading(true)
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/chat', {
+      const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

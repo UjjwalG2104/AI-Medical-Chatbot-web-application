@@ -93,6 +93,9 @@ pip install -r requirements.txt
 # Copy env file (edit if using Atlas or OpenAI)
 copy .env.example .env       # Windows
 # cp .env.example .env       # macOS/Linux
+
+# Recommended on this project (avoids reloader issues in some Windows terminals)
+set FLASK_DEBUG=false
 ```
 
 ### 3. Seed the Database
@@ -136,13 +139,118 @@ npm run dev
 
 The app will open at `http://localhost:5173`.
 
+### 6. One-click Run in VS Code (already configured)
+
+This project includes a task at `.vscode/tasks.json`:
+
+- **Task name**: `Run Full Stack (Backend + Frontend)`
+- **What it does**: Starts Flask backend (in a background PowerShell job) and then starts Vite frontend
+
+Run it from:
+
+1. `Ctrl+Shift+P`
+2. `Tasks: Run Task`
+3. Select `Run Full Stack (Backend + Frontend)`
+
+---
+
+## 🚀 Deployment Guide
+
+This project is now prepared for split deployment:
+
+- **Backend**: Flask API on Render/Railway/Fly.io
+- **Frontend**: Vite static app on Vercel/Netlify
+
+### Backend (Render example)
+
+1. Create a new **Web Service** from the repo.
+2. Set **Root Directory** to `backend`.
+3. Build command:
+  ```bash
+  pip install -r requirements.txt
+  ```
+4. Start command:
+  ```bash
+  gunicorn wsgi:app
+  ```
+5. Set environment variables:
+  - `MONGO_URI`
+  - `DB_NAME`
+  - `JWT_SECRET_KEY`
+  - `OPENAI_API_KEY` (optional)
+  - `CORS_ORIGINS` (set this to your frontend domain, e.g. `https://your-app.vercel.app`)
+
+Backend health check endpoint:
+
+- `GET /` should return status JSON.
+
+### Frontend (Vercel example)
+
+1. Import the same repo into Vercel.
+2. Set **Root Directory** to `frontend`.
+3. Set build settings:
+  - Build command: `npm run build`
+  - Output directory: `dist`
+4. Set environment variable:
+  - `VITE_API_BASE_URL=https://<your-backend-domain>`
+5. Redeploy frontend.
+
+### Post-deploy checklist
+
+1. Open frontend URL and create a user account.
+2. Log in and confirm token-based auth works.
+3. Send a test symptom message and verify `/chat` responds.
+4. Verify `/history` entries appear.
+5. If browser blocks requests, verify `CORS_ORIGINS` exactly matches your frontend domain.
+
 ---
 
 ## 🔌 API Endpoints
 
+> Note: Chat/history routes are authenticated. First call login to get a bearer token.
+
+### `POST /auth/signup`
+
+Create a user account.
+
+**Request:**
+```json
+{
+  "email": "you@example.com",
+  "password": "your-password"
+}
+```
+
+### `POST /auth/login`
+
+Authenticate and receive a JWT.
+
+**Request:**
+```json
+{
+  "email": "you@example.com",
+  "password": "your-password"
+}
+```
+
+**Response (example):**
+```json
+{
+  "message": "Login successful",
+  "token": "<jwt-token>",
+  "user": { "email": "you@example.com" }
+}
+```
+
 ### `POST /chat`
 
 Process symptoms and return suggestions.
+
+**Headers:**
+```http
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
 
 **Request:**
 ```json
@@ -178,6 +286,11 @@ Process symptoms and return suggestions.
 
 Returns saved chat messages (newest first).
 
+**Headers:**
+```http
+Authorization: Bearer <jwt-token>
+```
+
 ---
 
 ## 🤖 OpenAI Integration (Optional)
@@ -192,6 +305,29 @@ To enable AI-enhanced responses:
 3. Restart the backend
 
 The app **works without OpenAI** — it falls back to the rule-based matching system.
+
+---
+
+## 🩹 Troubleshooting
+
+### Windows Rollup optional dependency error
+
+If you see errors about `@rollup/rollup-win32-x64-msvc`, this project already includes a workaround:
+
+- `frontend/package.json` uses `rollup: npm:@rollup/wasm-node`
+
+If your local install is still broken:
+
+```bash
+cd frontend
+rmdir /s /q node_modules
+del package-lock.json
+npm install
+```
+
+### Backend startup warning on Python 3.14+
+
+The backend code lazily imports OpenAI and suppresses the known compatibility warning during import. If you still see warnings, ensure you're running the latest committed `backend/model.py`.
 
 ---
 
