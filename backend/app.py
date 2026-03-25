@@ -16,6 +16,23 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+
+def _mask_mongo_uri(uri: str) -> str:
+    """Hide credentials in Mongo URI before logging."""
+    if "@" not in uri or "://" not in uri:
+        return uri
+
+    scheme, rest = uri.split("://", 1)
+    if "@" not in rest:
+        return uri
+
+    creds_part, host_part = rest.split("@", 1)
+    if ":" not in creds_part:
+        return f"{scheme}://***@{host_part}"
+
+    username, _ = creds_part.split(":", 1)
+    return f"{scheme}://{username}:***@{host_part}"
+
 def create_app():
     """Flask application factory."""
     app = Flask(__name__)
@@ -30,6 +47,16 @@ def create_app():
     db_name = os.getenv("DB_NAME", "medical_chatbot")
     client = MongoClient(mongo_uri)
     app.db = client[db_name]
+
+    # Print active DB target and verify connectivity at startup.
+    masked_uri = _mask_mongo_uri(mongo_uri)
+    print(f"[DB] Connecting to: {masked_uri}")
+    print(f"[DB] Database name: {db_name}")
+    try:
+        client.admin.command("ping")
+        print("[DB] Connection test: OK")
+    except Exception as exc:
+        print(f"[DB] Connection test failed: {exc}")
 
     # ─── Register routes ──────────────────────────────────────────
     from routes import chat_bp
