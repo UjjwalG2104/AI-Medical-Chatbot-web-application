@@ -11,6 +11,8 @@ import os
 from flask import Flask
 from flask_cors import CORS
 from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+import certifi
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -45,7 +47,24 @@ def create_app():
     # ─── MongoDB connection ───────────────────────────────────────
     mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
     db_name = os.getenv("DB_NAME", "medical_chatbot")
-    client = MongoClient(mongo_uri)
+    mongo_kwargs = {
+        "serverSelectionTimeoutMS": 30000,
+    }
+
+    # Atlas-compatible TLS settings for consistent cert validation on Windows/dev boxes.
+    is_atlas_uri = mongo_uri.startswith("mongodb+srv://") or "mongodb.net" in mongo_uri
+    if is_atlas_uri:
+        mongo_kwargs.update({
+            "server_api": ServerApi("1"),
+            "tls": True,
+            "tlsCAFile": certifi.where(),
+        })
+
+    # Optional emergency flag for local debugging only.
+    if os.getenv("MONGO_TLS_ALLOW_INVALID_CERTS", "false").lower() == "true":
+        mongo_kwargs["tlsAllowInvalidCertificates"] = True
+
+    client = MongoClient(mongo_uri, **mongo_kwargs)
     app.db = client[db_name]
 
     # Print active DB target and verify connectivity at startup.
