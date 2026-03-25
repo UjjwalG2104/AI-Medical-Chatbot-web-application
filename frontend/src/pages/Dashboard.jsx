@@ -12,15 +12,23 @@ export default function Dashboard({ token, setToken }) {
 
   const [language, setLanguage] = useState('en')
 
-  async function parseApiResponse(response) {
+  async function parseApiResponse(response, endpointLabel) {
     const text = await response.text()
+    const contentType = response.headers.get('content-type') || 'unknown'
+    const compactPreview = text.trim().replace(/\s+/g, ' ').slice(0, 120)
     try {
       return JSON.parse(text)
     } catch {
       if (text.trim().toLowerCase().startsWith('<!doctype') || text.trim().startsWith('<html')) {
-        throw new Error('API endpoint returned HTML instead of JSON. Check VITE_API_BASE_URL and backend routes.')
+        throw new Error(
+          `Expected JSON but got HTML for ${endpointLabel}. URL: ${response.url}. Status: ${response.status}. Content-Type: ${contentType}. ` +
+          'Set VITE_API_BASE_URL to your backend origin only (for example, https://your-backend.onrender.com) and verify routes: /auth/login, /auth/signup, /chat, /history.'
+        )
       }
-      throw new Error(`Unexpected API response (status ${response.status}).`)
+      throw new Error(
+        `Unexpected API response for ${endpointLabel}. URL: ${response.url}. Status: ${response.status}. ` +
+        `Content-Type: ${contentType}. Body preview: ${compactPreview || '(empty)'}`
+      )
     }
   }
 
@@ -61,7 +69,7 @@ export default function Dashboard({ token, setToken }) {
     fetch(`${API_BASE_URL}/history?limit=10`, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
-      .then((res) => parseApiResponse(res))
+      .then((res) => parseApiResponse(res, 'history'))
       .then((data) => {
         if (!data.error) setHistory(data)
       })
@@ -97,7 +105,7 @@ export default function Dashboard({ token, setToken }) {
         body: JSON.stringify({ message: text, language }),
       })
 
-      const data = await parseApiResponse(response)
+      const data = await parseApiResponse(response, 'chat')
       if (response.status === 401) {
         handleLogout()
         return
